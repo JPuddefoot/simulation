@@ -2,13 +2,13 @@
 -behaviour(gen_statem).
 
 %%% api calls
--export([rabbit_rand_move/1]).
+-export([rabbit_rand_move/1, rabbit_eat/1]).
 
 %%% gen_statem callbacks
 -export([start_link/1, init/1, callback_mode/0, terminate/3, code_change/4]).
 
 %%% gen_statem stateNames
--export([roaming/3]).
+-export([roaming/3, eating/3]).
 
 %% for moving the rabbit
 %-export([move_rabbit/1]).
@@ -38,6 +38,9 @@ start_link(Name) ->
 rabbit_rand_move(Name) ->
     gen_statem:cast(Name, rand_move).
 
+rabbit_eat(Name) ->
+    gen_statem:call(Name, test).
+
 %%% gen_statem callbacks
 
 callback_mode() ->
@@ -46,7 +49,7 @@ callback_mode() ->
 init([]) ->
     {ok, roaming, #rabbit{}}.            %% need to randomly set position/speed
 
-terminate(_Reason, State, _Data) ->
+terminate(_Reason, _State, _Data) ->
     io:format("Rabbit died~n"),
     ok.
 
@@ -59,8 +62,16 @@ roaming(cast, rand_move, #rabbit{position=[X,Y], speed=Speed}) ->
     [X2, Y2] = simulation_move:rand_move([X,Y], Speed),
     Rabbit = #rabbit{position=[X2, Y2]},
     io:format("~p~n", [Rabbit]),
-    {next_state, roaming, Rabbit}.
+    {next_state, roaming, Rabbit};
+roaming(cast, found_carrot, #rabbit{}) ->
+    {next_state, eating, #rabbit{}};
+roaming(cast, _EventContent, #rabbit{}) ->
+    io:format("unknown message"),
+    {next_state, roaming, #rabbit{}}.
 
+eating({call, From}, eating, #rabbit{carrots=Carrots}) ->
+    io:format("Rabbit eating...~n"),
+    {next_state, roaming, #rabbit{carrots=Carrots+1}, [{reply, From, ok}]}.
 
 
 
