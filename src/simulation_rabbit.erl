@@ -2,9 +2,10 @@
 -behaviour(gen_statem).
 
 -define(TIMEOUT, 1000).
+-define(CARROT_MAX, 5).
 
 %%% api calls
--export([rabbit_rand_move/1, rabbit_eat/1]).
+
 
 %%% gen_statem callbacks
 -export([start_link/1, init/1, callback_mode/0, terminate/3, code_change/4]).
@@ -37,12 +38,6 @@
 start_link(Name) ->
     gen_statem:start_link({local, Name}, ?MODULE, [], []).
 
-rabbit_rand_move(Name) ->
-    gen_statem:cast(Name, rand_move).
-
-rabbit_eat(Name) ->
-    gen_statem:call(Name, test).
-
 %%% gen_statem callbacks
 
 callback_mode() ->
@@ -61,21 +56,34 @@ code_change(_Vsn, State, Data, _Extra) ->
 %%% gen_statem states
 
 
-roaming(cast, found_carrot, #rabbit{}) ->
-    {next_state, eating, #rabbit{}, ?TIMEOUT};
-roaming(cast, _EventContent, #rabbit{}) ->
+roaming(cast, found_carrot, Rabbit = #rabbit{}) ->
+    {next_state, eating, Rabbit, ?TIMEOUT};
+roaming(cast, _EventContent, Rabbit=#rabbit{}) ->
     io:format("unknown message"),
-    {next_state, roaming, #rabbit{}, ?TIMEOUT};
-roaming(timeout, _EventContent, #rabbit{position=[X,Y], speed=Speed}) ->
+    {next_state, roaming, Rabbit, ?TIMEOUT};
+roaming(timeout, _EventContent, #rabbit{position=[X,Y], speed=Speed, carrots=Carrots}) ->
     [X2, Y2] = simulation_move:rand_move([X,Y], Speed),
-    Rabbit = #rabbit{position=[X2, Y2]},
+    Rabbit = #rabbit{position=[X2, Y2], carrots=Carrots},
     io:format("~p~n", [Rabbit]),
     {next_state, roaming, Rabbit, ?TIMEOUT}.
 
 
-eating({call, From}, eating, #rabbit{carrots=Carrots}) ->
+eating({call, _From}, eating, #rabbit{}) ->
     io:format("Rabbit eating...~n"),
-    {next_state, roaming, #rabbit{carrots=Carrots+1}, [{reply, From, ok}]}.
+    {next_state, eating, #rabbit{}, ?TIMEOUT};
+eating(timeout, _EventContent, #rabbit{carrots=Carrots}) ->
+    case Carrots of
+        ?CARROT_MAX  ->
+            io:format("Splitting..."),
+            {next_state, splitting, #rabbit{}};
+        
+        _ -> 
+            io:format("Eaten~n"),    
+            {next_state, roaming, #rabbit{carrots=Carrots+1}, ?TIMEOUT}
+    end.
+    
+
+
 
 
 
