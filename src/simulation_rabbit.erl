@@ -2,6 +2,7 @@
 -behaviour(gen_statem).
 
 -define(TIMEOUT, 1000).
+-define(FAST_TIMEOUT, 10).
 -define(CARROT_MAX, 5).
 
 %%% api calls
@@ -11,7 +12,7 @@
 -export([start_link/1, init/1, callback_mode/0, terminate/3, code_change/4]).
 
 %%% gen_statem stateNames
--export([roaming/3, eating/3]).
+-export([roaming/3, eating/3, splitting/3]).
 
 %% for moving the rabbit
 %-export([move_rabbit/1]).
@@ -74,15 +75,18 @@ eating({call, _From}, eating, #rabbit{}) ->
 eating(timeout, _EventContent, #rabbit{carrots=Carrots}) ->
     case Carrots of
         ?CARROT_MAX  ->
-            io:format("Splitting..."),
-            {next_state, splitting, #rabbit{}};
+            io:format("Splitting...~n"),
+            {next_state, splitting, #rabbit{carrots=Carrots}, ?FAST_TIMEOUT};
         
         _ -> 
             io:format("Eaten~n"),    
             {next_state, roaming, #rabbit{carrots=Carrots+1}, ?TIMEOUT}
     end.
     
-
+splitting(timeout, _EventContent, #rabbit{}) ->
+    %%% dynamically add a new rabbit to the supervisor, return current rabbit to 0 carrots
+    {next_state, roaming, #rabbit{carrots=0}, ?TIMEOUT}.
+    
 
 
 
