@@ -1,9 +1,7 @@
 -module(simulation_rabbit).
 -behaviour(gen_statem).
 
--define(TIMEOUT, 1000).
--define(FAST_TIMEOUT, 10).
--define(CARROT_MAX, 5).
+-include("../include/simulation_records.hrl").
 
 %%% api calls
 
@@ -14,12 +12,6 @@
 %%% gen_statem stateNames
 -export([roaming/3, eating/3, splitting/3]).
 
-%% for moving the rabbit
-%-export([move_rabbit/1]).
-
--record(rabbit, {position=[0,0],
-                speed = 0.5,
-                carrots=0}).
 
 %%% 
 % A rabbit will randomly travel the world eating carrots that spawn in random places
@@ -69,23 +61,23 @@ roaming(timeout, _EventContent, #rabbit{position=[X,Y], speed=Speed, carrots=Car
     {next_state, roaming, Rabbit, ?TIMEOUT}.
 
 
-eating({call, _From}, eating, #rabbit{}) ->
+eating({call, _From}, eating, Rabbit = #rabbit{}) ->
     io:format("Rabbit eating...~n"),
-    {next_state, eating, #rabbit{}, ?TIMEOUT};
-eating(timeout, _EventContent, #rabbit{carrots=Carrots}) ->
+    {next_state, eating, Rabbit, ?TIMEOUT};
+eating(timeout, _EventContent, #rabbit{carrots=Carrots, position=[X,Y]}) ->
     case Carrots of
         ?CARROT_MAX  ->
             io:format("Splitting...~n"),
-            {next_state, splitting, #rabbit{carrots=Carrots}, ?FAST_TIMEOUT};
+            {next_state, splitting, #rabbit{carrots=Carrots, position=[X,Y]}, ?FAST_TIMEOUT};
         
         _ -> 
-            io:format("Eaten~n"),    
-            {next_state, roaming, #rabbit{carrots=Carrots+1}, ?TIMEOUT}
+            io:format("Eaten Carrot~n"),    
+            {next_state, roaming, #rabbit{carrots=Carrots+1, position=[X,Y]}, ?TIMEOUT}
     end.
     
-splitting(timeout, _EventContent, #rabbit{}) ->
+splitting(timeout, _EventContent, Rabbit = #rabbit{}) ->
     %%% dynamically add a new rabbit to the supervisor, return current rabbit to 0 carrots
-    {next_state, roaming, #rabbit{carrots=0}, ?TIMEOUT}.
+    {next_state, roaming, Rabbit#rabbit{carrots=0}, ?TIMEOUT}.
     
 
 

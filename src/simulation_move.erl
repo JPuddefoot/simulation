@@ -1,10 +1,12 @@
 
 -module(simulation_move).
+
+-include("../include/simulation_records.hrl").
+
 -export([rand_move/2]).
 
-%%% define area of simulation
--define(MAX_X, 5).
--define(MAX_Y, 5).
+
+
 
 %% simulate 2-d random walk
 %       takes [x,y] coords, and adjusts x/y by 1 
