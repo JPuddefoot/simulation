@@ -1,6 +1,9 @@
 -module(simulation_rabbit).
 -behaviour(gen_statem).
 
+%%% api calls
+-export([rabbit_rand_move/1]).
+
 %%% gen_statem callbacks
 -export([start_link/1, init/1, callback_mode/0, terminate/3, code_change/4]).
 
@@ -29,9 +32,11 @@
 %       State: eating -
 %           If a rabbit hits a carrot, eats it and signals he has found a carrot
 
-start_link([Name]) ->
+start_link(Name) ->
     gen_statem:start_link({local, Name}, ?MODULE, [], []).
 
+rabbit_rand_move(Name) ->
+    gen_statem:cast(Name, rand_move).
 
 %%% gen_statem callbacks
 
@@ -50,8 +55,8 @@ code_change(_Vsn, State, Data, _Extra) ->
 
 %%% gen_statem states
 
-roaming(cast, _EventContent, #rabbit{position=[X,Y]}) ->
-    [X2, Y2] = simulation_move:rand_move([X,Y]),
+roaming(cast, rand_move, #rabbit{position=[X,Y], speed=Speed}) ->
+    [X2, Y2] = simulation_move:rand_move([X,Y], Speed),
     Rabbit = #rabbit{position=[X2, Y2]},
     io:format("~p~n", [Rabbit]),
     {next_state, roaming, Rabbit}.
