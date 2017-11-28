@@ -29,7 +29,7 @@
 %           If a rabbit hits a carrot, eats it and signals he has found a carrot
 
 start_link(Name) ->
-    gen_statem:start_link({global, Name}, ?MODULE, [], []).
+    gen_statem:start_link({local, Name}, ?MODULE, [], []).
 
 %%% gen_statem callbacks
 

@@ -24,7 +24,7 @@ init([]) ->
     {ok, {Sup_flags, [ChildSpec]}}.
 
 start_rabbit(Name) ->
-    io:format("started rabbit"),
+    io:format("Rabbit ~p born~n", [Name]),
     supervisor:start_child(rabbit_sup, [Name]).
 
 kill_rabbit(Pid) ->
@@ -34,8 +34,8 @@ breed_rabbits(Total) ->
     breed_rabbits(0, Total).  
 
 breed_rabbits(Created, Total) when Created < Total ->
-    start_rabbit({rabbit,Created}),
-    io:format("Created rabbit~n"),
+    Name = list_to_atom(integer_to_list(Created)),
+    start_rabbit(Name),
     breed_rabbits(Created+1, Total);
 breed_rabbits(_Created, _Total) ->
     done.
