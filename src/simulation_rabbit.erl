@@ -29,7 +29,7 @@
 %           If a rabbit hits a carrot, eats it and signals he has found a carrot
 
 start_link(Name) ->
-    gen_statem:start_link({local, Name}, ?MODULE, [], []).
+    gen_statem:start_link(?MODULE, [], []).
 
 %%% gen_statem callbacks
 
@@ -77,7 +77,9 @@ eating(timeout, _EventContent, #rabbit{carrots=Carrots, position=[X,Y]}) ->
     
 splitting(timeout, _EventContent, Rabbit = #rabbit{}) ->
     %%% dynamically add a new rabbit to the supervisor, return current rabbit to 0 carrots
+    simulation_rabbit_sup:start_rabbit(erlang:timestamp()),
     {next_state, roaming, Rabbit#rabbit{carrots=0}, ?TIMEOUT}.
+    
     
 
 
