@@ -22,8 +22,12 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%      Carrot parameter        %%
+-define(CARROT_NUM, 5).
+
 -record(carrot, {pid=self(),
-                position=[0,0]}).     
+                position=[0,0],
+                quantity=?CARROT_NUM}).     
+
 
 
 
