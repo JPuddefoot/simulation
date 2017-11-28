@@ -7,7 +7,7 @@
 
 
 %%% gen_statem callbacks
--export([start_link/1, init/1, callback_mode/0, terminate/3, code_change/4]).
+-export([start_link/0, init/1, callback_mode/0, terminate/3, code_change/4]).
 
 %%% gen_statem stateNames
 -export([roaming/3, eating/3, splitting/3]).
@@ -28,7 +28,7 @@
 %       State: eating -
 %           If a rabbit hits a carrot, eats it and signals he has found a carrot
 
-start_link(Name) ->
+start_link() ->
     gen_statem:start_link(?MODULE, [], []).
 
 %%% gen_statem callbacks
@@ -37,7 +37,7 @@ callback_mode() ->
     state_functions.
 
 init([]) ->
-    {ok, roaming, #rabbit{}, ?TIMEOUT}.            %% need to randomly set position/speed
+    {ok, roaming, #rabbit{position=simulation_move:rand_coords()}, ?TIMEOUT}.            %% need to randomly set position/speed
 
 terminate(_Reason, _State, _Data) ->
     io:format("Rabbit died~n"),
@@ -51,9 +51,6 @@ code_change(_Vsn, State, Data, _Extra) ->
 
 roaming(cast, found_carrot, Rabbit = #rabbit{}) ->
     {next_state, eating, Rabbit, ?TIMEOUT};
-roaming(cast, _EventContent, Rabbit=#rabbit{}) ->
-    io:format("unknown message"),
-    {next_state, roaming, Rabbit, ?TIMEOUT};
 roaming(timeout, _EventContent, #rabbit{position=[X,Y], speed=Speed, carrots=Carrots}) ->
     [X2, Y2] = simulation_move:rand_move([X,Y], Speed),
     Rabbit = #rabbit{position=[X2, Y2], carrots=Carrots},
@@ -61,8 +58,7 @@ roaming(timeout, _EventContent, #rabbit{position=[X,Y], speed=Speed, carrots=Car
     {next_state, roaming, Rabbit, ?TIMEOUT}.
 
 
-eating({call, _From}, eating, Rabbit = #rabbit{}) ->
-    io:format("Rabbit eating...~n"),
+eating(cast, found_carrot, Rabbit = #rabbit{}) ->
     {next_state, eating, Rabbit, ?TIMEOUT};
 eating(timeout, _EventContent, #rabbit{carrots=Carrots, position=[X,Y]}) ->
     case Carrots of
