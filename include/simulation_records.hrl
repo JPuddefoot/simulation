@@ -6,7 +6,8 @@
 
 
 %% rabbit parameters
--record(rabbit, {position=[0,0],
+-record(rabbit, {pid=self(),
+                position=[0,0],
                 speed = 0.5,
                 carrots=0}).
 % time between rabbit movements
