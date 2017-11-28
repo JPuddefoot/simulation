@@ -3,6 +3,7 @@
 %% world parameters
 -define(MAX_X, 5).
 -define(MAX_Y, 5).
+-define(MAX_RABBITS, 10).
 
 
 %% rabbit parameters
