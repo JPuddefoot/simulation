@@ -41,7 +41,7 @@ callback_mode() ->
 init([]) ->
     Rabbit = #rabbit{position=simulation_move:rand_coords()},
     io:format("Rabbit: ~p~n", [Rabbit]),
-    {ok, roaming, Rabbit, ?TIMEOUT}.            %% need to randomly set position/speed
+    {ok, roaming, Rabbit, ?TIMEOUT}.            
 
 terminate(_Reason, _State, _Data) ->
     io:format("Rabbit: Rabbit died~n"),
@@ -52,9 +52,8 @@ code_change(_Vsn, State, Data, _Extra) ->
 
 %%% gen_statem states
 
+%% roaming state - after timeout, rabbit moves by one and check if on same coord as a carrot
 
-roaming(cast, found_carrot, Rabbit = #rabbit{}) ->
-    {next_state, eating, Rabbit, ?TIMEOUT};
 roaming(timeout, _EventContent, #rabbit{position=[X,Y], speed=Speed, carrots=Carrots}) ->
     % move rabbit by one
     [X2, Y2] = simulation_move:rand_move([X,Y], Speed),
@@ -72,6 +71,7 @@ roaming(timeout, _EventContent, #rabbit{position=[X,Y], speed=Speed, carrots=Car
             {next_state, eating, [Rabbit,Pid], ?TIMEOUT}
     end.
     
+%% eating state - after timeout rabbit will increase carrot count by one and send message to carrot server
 
 eating(timeout, _StateContent, [#rabbit{carrots=Carrots, position=[X,Y], speed=Speed}, Pid]) ->
     NewCarrots = Carrots+1,
@@ -90,21 +90,21 @@ eating(timeout, _StateContent, [#rabbit{carrots=Carrots, position=[X,Y], speed=S
             {next_state, roaming, Rabbit, ?TIMEOUT}
     end.
     
-
+%% splitting state - rabbit dynamically adds a new rabbit to the supervisor, return current rabbit to 0 carrots
 splitting(timeout, _EventContent, Rabbit = #rabbit{}) ->
-    %%% dynamically add a new rabbit to the supervisor, return current rabbit to 0 carrots
     simulation_rabbit_sup:start_rabbit(),
     {next_state, roaming, Rabbit#rabbit{carrots=0}, ?TIMEOUT}.
     
     
 %%% internal functions
 
+%% get list of carrot servers
 check_carrot([X,Y]) ->
     ChildList = supervisor:which_children(carrot_sup),
     Pid = check_carrot(ChildList, [X,Y]),
     Pid.
 
-
+%% base condition
 check_carrot([], _Position) ->
     none;
 check_carrot(ChildList, [X,Y]) ->
