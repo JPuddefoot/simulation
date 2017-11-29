@@ -1,17 +1,3 @@
--module(simulation_rabbit).
--behaviour(gen_statem).
-
--include("../include/simulation_records.hrl").
-
-%%% api calls
-
-
-%%% gen_statem callbacks
--export([start_link/0, init/1, callback_mode/0, terminate/3, code_change/4]).
-
-%%% gen_statem stateNames
--export([roaming/3, eating/3, splitting/3, check_carrot/1]).
-
 
 %%% 
 % A rabbit will randomly travel the world eating carrots that spawn in random places
@@ -28,6 +14,21 @@
 %       State: eating -
 %           If a rabbit hits a carrot, eats it and signals he has found a carrot
 
+-module(simulation_rabbit).
+-behaviour(gen_statem).
+
+-include("../include/simulation_records.hrl").
+
+%%% api calls
+-export([start_link/0]).
+
+%%% gen_statem callbacks
+-export([init/1, callback_mode/0, terminate/3, code_change/4]).
+
+%%% gen_statem stateNames
+-export([roaming/3, eating/3, splitting/3, check_carrot/1]).
+
+
 %%% Rabbit API
 
 start_link() ->
@@ -40,7 +41,7 @@ callback_mode() ->
 
 init([]) ->
     Rabbit = #rabbit{position=simulation_move:rand_coords()},
-    io:format("Rabbit: ~p~n", [Rabbit]),
+    io:format("Rabbit born: ~p~n", [Rabbit]),
     {ok, roaming, Rabbit, ?TIMEOUT}.            
 
 terminate(_Reason, _State, _Data) ->
@@ -58,7 +59,7 @@ roaming(timeout, _EventContent, #rabbit{position=[X,Y], speed=Speed, carrots=Car
     % move rabbit by one
     [X2, Y2] = simulation_move:rand_move([X,Y], Speed),
     Rabbit = #rabbit{position=[X2, Y2], carrots=Carrots},
-    io:format("Rabbit: ~p~n", [Rabbit]),
+    io:format("Rabbit ~p: ~p~n", [Rabbit#rabbit.pid, Rabbit#rabbit.position]),
     % check if new position has a carrot on it
     case check_carrot([X,Y]) of
         
@@ -77,16 +78,16 @@ eating(timeout, _StateContent, [#rabbit{carrots=Carrots, position=[X,Y], speed=S
     NewCarrots = Carrots+1,
     Rabbit = #rabbit{carrots=NewCarrots, position=[X,Y], speed=Speed},
     gen_server:cast(Pid, eaten),
-    % check if Carrot_MAX reached
+    % check if CARROT_MAX reached
     case NewCarrots of
         ?CARROT_MAX  ->
             % if max carrot, move to splitting
-            io:format("Rabbit: Splitting...~n"),
+            io:format("Rabbit ~p: Splitting...~n", [Rabbit#rabbit.pid]),
             {next_state, splitting, #rabbit{carrots=Carrots, position=[X,Y]}, ?FAST_TIMEOUT};
         
         _ -> 
             % if not max carrot, move to roaming
-            io:format("Rabbit: Eaten Carrot~n"),  
+            io:format("Rabbit ~p: Eaten Carrot~n", [Rabbit#rabbit.pid]),  
             {next_state, roaming, Rabbit, ?TIMEOUT}
     end.
     

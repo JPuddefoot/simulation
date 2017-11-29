@@ -12,11 +12,10 @@
 %%% API
 start_link() ->
     supervisor:start_link({local, carrot_sup}, ?MODULE, []),
-    spawn_carrots(100).
+    spawn_carrots(?MAX_CARROTS).
 
 start_carrot() ->
     supervisor:start_child(carrot_sup, []).
-
 
 
 %%% Callbacks
