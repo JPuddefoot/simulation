@@ -107,8 +107,10 @@ check_carrot([X,Y]) ->
 %% base condition
 check_carrot([], _Position) ->
     none;
+%% loop through carrot servers, checking if carrot coords match with rabbit coords
 check_carrot(ChildList, [X,Y]) ->
     [{_,Pid, _,_}|Tail] = ChildList,
+    % try...catch for race condition when two rabbits call server at same time
     try gen_server:call(Pid, {are_you_here, [X,Y]}) of
         yes ->
             Pid;
