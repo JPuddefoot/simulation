@@ -22,8 +22,11 @@ start_link() ->
 %%% Callbacks
 
 init([]) ->
-    {ok, #carrot{position=simulation_move:rand_coords()}}.
+    Carrot = #carrot{position=simulation_move:rand_coords()},
+    io:format("Carrot spawned: ~p~n", [Carrot#carrot.pid]),
+    {ok, Carrot}.
 
+%% returns true if rabbit is in same position, false if not
 handle_call({are_you_here, [X,Y]}, _From, Carrot = #carrot{}) ->
     case [X,Y] =:= Carrot#carrot.position of
         true ->
@@ -35,18 +38,25 @@ handle_call({are_you_here, [X,Y]}, _From, Carrot = #carrot{}) ->
 handle_call(terminate, _From, Carrot = #carrot{}) ->
     {stop, normal, ok, Carrot}.
 
-handle_cast(eaten, #carrot{quantity=N}) ->
-    {noreply, #carrot{quantity=N-1}}.
-
+%% Removes a carrot when a rabbit sends an eaten cast
+handle_cast(eaten, #carrot{quantity=N, position=Position}) when N > 1 ->
+    {noreply, #carrot{quantity=N-1, position=Position}};
+handle_cast(eaten, #carrot{quantity=N, position=Position}) when N =:= 1 ->
+    {stop, normal, #carrot{quantity=0, position=Position}};
+handle_cast(eaten, #carrot{quantity=N}) when N < 1 ->
+    {stop, error, #carrot{}}.
 
 
 handle_info(Msg, Carrot = #carrot{}) ->
     io:format("Unexpected message ~p~n", [Msg]),
     {noreply, Carrot}.
 
-
-terminate(_Reason, _State) ->
-    io:format("Carrot Eaten~n"),
+%% carrot terminates when no more carrots left
+terminate(normal, Carrot) ->
+    io:format("Carrot ~p eaten~n", [Carrot#carrot.pid]);
+%% error 
+terminate(_Reason, Carrot) ->
+    io:format("Error: ~p", [Carrot#carrot.pid]),
     ok.
     
 code_change(_Vsn, State, _Extra) ->

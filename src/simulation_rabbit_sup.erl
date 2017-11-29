@@ -26,13 +26,13 @@ breed_rabbits(Total) ->
 
 %%% Callbacks
 init([]) ->
-    Sup_flags = #{strategy => simple_one_for_one},
+    SupFlags = #{strategy => simple_one_for_one},
     ChildSpec = #{id => rabbit,
                 start => {simulation_rabbit, start_link, []},
                 restart => permanent,
                 shutdown => 1000,
                 type => worker},
-    {ok, {Sup_flags, [ChildSpec]}}.
+    {ok, {SupFlags, [ChildSpec]}}.
 
   
 %%% internal functions
