@@ -15,7 +15,7 @@ start_link() ->
     breed_rabbits(?MAX_RABBITS).
 
 start_rabbit() ->
-    io:format("Rabbit born~n"),
+    io:format("Rabbit_Sup: Rabbit born~n"),
     supervisor:start_child(rabbit_sup, []).
 
 kill_rabbit(Pid) ->

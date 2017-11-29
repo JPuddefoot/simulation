@@ -30,9 +30,9 @@ init([]) ->
 handle_call({are_you_here, [X,Y]}, _From, Carrot = #carrot{}) ->
     case [X,Y] =:= Carrot#carrot.position of
         true ->
-            {reply, true, Carrot};
+            {reply, yes, Carrot};
         false ->
-            {reply, false, Carrot}
+            {reply, no, Carrot}
     end;
 
 handle_call(terminate, _From, Carrot = #carrot{}) ->

@@ -33,6 +33,6 @@ rand_move(Position, Speed, _Change) ->
 
 
 rand_coords() ->
-    [X,Y] = [rand:uniform(?MAX_X), rand:uniform(?MAX_Y)],
+    [X,Y] = [float(rand:uniform(?MAX_X)), float(rand:uniform(?MAX_Y))],
     [X,Y].
 

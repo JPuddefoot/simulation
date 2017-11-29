@@ -12,7 +12,7 @@
 %%% API
 start_link() ->
     supervisor:start_link({local, carrot_sup}, ?MODULE, []),
-    spawn_carrots(?CARROT_NUM).
+    spawn_carrots(100).
 
 start_carrot() ->
     supervisor:start_child(carrot_sup, []).
