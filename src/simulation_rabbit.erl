@@ -67,15 +67,16 @@ roaming(timeout, _EventContent, #rabbit{position=[X,Y], speed=Speed, carrots=Car
             % if no carrot, then move to new space
             {next_state, roaming, Rabbit, ?TIMEOUT};
         
-        _Pid -> 
+        Pid -> 
             % if carrot, move to eating state
-            {next_state, eating, Rabbit, ?TIMEOUT}
+            {next_state, eating, [Rabbit,Pid], ?TIMEOUT}
     end.
     
 
-eating(timeout, _EventContent, #rabbit{carrots=Carrots, position=[X,Y], speed=Speed}) ->
+eating(timeout, _StateContent, [#rabbit{carrots=Carrots, position=[X,Y], speed=Speed}, Pid]) ->
     NewCarrots = Carrots+1,
     Rabbit = #rabbit{carrots=NewCarrots, position=[X,Y], speed=Speed},
+    gen_server:cast(Pid, eaten),
     % check if Carrot_MAX reached
     case NewCarrots of
         ?CARROT_MAX  ->
@@ -108,10 +109,14 @@ check_carrot([], _Position) ->
     none;
 check_carrot(ChildList, [X,Y]) ->
     [{_,Pid, _,_}|Tail] = ChildList,
-    case gen_server:call(Pid, {are_you_here, [X,Y]}) of
+    try gen_server:call(Pid, {are_you_here, [X,Y]}) of
         yes ->
             Pid;
         no ->
+            check_carrot(Tail, [X,Y])
+    catch
+    % catch any errors with communicating with particular carrot server, and move onto next
+        exit:_Reason ->
             check_carrot(Tail, [X,Y])
     end.
 

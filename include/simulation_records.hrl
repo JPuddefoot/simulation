@@ -22,7 +22,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%      Carrot parameter        %%
--define(CARROT_NUM, 5).
+-define(CARROT_NUM, 1).
 
 -record(carrot, {pid=self(),
                 position=[0,0],
