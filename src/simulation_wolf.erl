@@ -15,7 +15,7 @@
 -export([init/1, callback_mode/0, terminate/3, code_change/4]).
 
 %%% gen_statem stateNames
--export([roaming/3]).
+-export([roaming/3, eating/3, splitting/3]).
 
 %%% Wolf API
 
@@ -45,7 +45,7 @@ roaming(timeout, _EventContent, #wolf{position=[X,Y], speed=Speed, rabbits=Rabbi
     % move wolf by one
     [X2, Y2] = simulation_move:rand_move([X,Y], Speed),
     Wolf = #wolf{position=[X2, Y2], rabbits=Rabbits},
-    io:format("Wolf ~p: ~p~n", [Wolf#wolf.pid, Wolf#wolf.position]),
+    io:format("Wolf: ~p~n", [Wolf]),
     case check_rabbit([X2, Y2]) of
         none ->
             {next_state, roaming, Wolf, ?WOLF_SPEED};
@@ -57,17 +57,22 @@ roaming(timeout, _EventContent, #wolf{position=[X,Y], speed=Speed, rabbits=Rabbi
 eating(timeout, _EventContent, [#wolf{position=[X,Y], speed=Speed, rabbits=Rabbits}, Pid]) ->
     NewRabbits = Rabbits+1,
     Wolf = #wolf{position=[X,Y], speed=Speed, rabbits=NewRabbits},
-    io:format("Wolf ~p: Eating ~p", [Wolf#wolf.pid, Pid]),
+    io:format("Wolf ~p: Eating Rabbit: ~p~n", [Wolf#wolf.pid, Pid]),
     gen_statem:cast(Pid, eaten),
     case NewRabbits of
         % if max rabbit, move to splitting
         ?RABBIT_MAX ->
-            io:format("Wolf ~p: Splitting...", [Wolf#wolf.pid]),
-            {next_state, splitting, Wolf};
+            io:format("Wolf ~p: Splitting...~n", [Wolf#wolf.pid]),
+            {next_state, splitting, Wolf, ?SPLIT_TIME};
         % if not, move back to roaming
         _ ->
-            {next_state, roaming, Wolf} 
+            {next_state, roaming, Wolf, ?WOLF_SPEED} 
     end.
+
+%% splitting state - rabbit dynamically adds a new rabbit to the supervisor, return current rabbit to 0 carrots
+splitting(timeout, _EventContent, Wolf = #wolf{}) ->
+        simulation_wolf_sup:start_wolf(),
+        {next_state, roaming, Wolf#wolf{rabbits=0}, ?WOLF_SPEED}.
 
 %%% internal functions
 

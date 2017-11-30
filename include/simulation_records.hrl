@@ -4,7 +4,7 @@
 -define(MAX_X, 5).
 -define(MAX_Y, 5).
 -define(MAX_RES, 0.5).
--define(MAX_RABBITS, 1).
+-define(MAX_RABBITS, 50).
 -define(MAX_CARROTS, 30).
 -define(SPLIT_TIME, 10).
 

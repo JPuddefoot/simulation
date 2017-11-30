@@ -40,10 +40,10 @@ handle_call(terminate, _From, Carrot = #carrot{}) ->
 
 %% Removes a carrot when a rabbit sends an eaten cast
 handle_cast(eaten, Carrot = #carrot{quantity=N, position=Position}) when N > 1 ->
-    io:format("Carrot ~p: Carrot eaten~n", [Carrot#carrot.pid]),
+    %io:format("Carrot ~p: Carrot eaten~n", [Carrot#carrot.pid]),
     {noreply, #carrot{quantity=N-1, position=Position}};
 handle_cast(eaten, Carrot = #carrot{quantity=N, position=Position}) when N =:= 1 ->
-    io:format("Carrot ~p: Carrot eaten~n", [Carrot#carrot.pid]),
+    %io:format("Carrot ~p: Carrot eaten~n", [Carrot#carrot.pid]),
     {stop, normal, #carrot{quantity=0, position=Position}};
 handle_cast(eaten, #carrot{quantity=N}) when N < 1 ->
     {stop, error, #carrot{}}.
