@@ -96,6 +96,7 @@ eating({call, From}, {are_you_here, [X,Y]}, Rabbit = #rabbit{position=Position})
 eating(timeout, _StateContent, [#rabbit{carrots=Carrots, position=[X,Y], speed=Speed}, Pid]) ->
     NewCarrots = Carrots+1,
     Rabbit = #rabbit{carrots=NewCarrots, position=[X,Y], speed=Speed},
+    io:format("Rabbit ~p: Eaten Carrot~n", [Rabbit#rabbit.pid]), 
     gen_server:cast(Pid, eaten),
     % check if CARROT_MAX reached
     case NewCarrots of
@@ -105,8 +106,7 @@ eating(timeout, _StateContent, [#rabbit{carrots=Carrots, position=[X,Y], speed=S
             {next_state, splitting, #rabbit{carrots=Carrots, position=[X,Y]}, ?SPLIT_TIME};
         
         _ -> 
-            % if not max carrot, move to roaming
-            io:format("Rabbit ~p: Eaten Carrot~n", [Rabbit#rabbit.pid]),  
+            % if not max carrot, move to roaming 
             {next_state, roaming, Rabbit, ?RABBIT_SPEED}
     end.
     

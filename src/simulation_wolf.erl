@@ -50,12 +50,24 @@ roaming(timeout, _EventContent, #wolf{position=[X,Y], speed=Speed, rabbits=Rabbi
         none ->
             {next_state, roaming, Wolf, ?WOLF_SPEED};
         
-        _Pid ->
-            {next_state, eating, Wolf, ?WOLFSPEED}
-    end,
-    {next_state, roaming, Wolf, ?WOLF_SPEED}.
+        Pid ->
+            {next_state, eating, [Wolf, Pid], ?WOLF_SPEED}
+    end.
 
-
+eating(timeout, _EventContent, [#wolf{position=[X,Y], speed=Speed, rabbits=Rabbits}, Pid]) ->
+    NewRabbits = Rabbits+1,
+    Wolf = #wolf{position=[X,Y], speed=Speed, rabbits=NewRabbits},
+    io:format("Wolf ~p: Eating ~p", [Wolf#wolf.pid, Pid]),
+    gen_statem:cast(Pid, eaten),
+    case NewRabbits of
+        % if max rabbit, move to splitting
+        ?RABBIT_MAX ->
+            io:format("Wolf ~p: Splitting...", [Wolf#wolf.pid]),
+            {next_state, splitting, Wolf};
+        % if not, move back to roaming
+        _ ->
+            {next_state, roaming, Wolf} 
+    end.
 
 %%% internal functions
 
