@@ -42,7 +42,7 @@ callback_mode() ->
 init([]) ->
     Rabbit = #rabbit{position=simulation_move:rand_coords()},
     io:format("Rabbit born: ~p~n", [Rabbit]),
-    {ok, roaming, Rabbit, ?TIMEOUT}.            
+    {ok, roaming, Rabbit, ?RABBIT_SPEED}.            
 
 terminate(_Reason, _State, _Data) ->
     io:format("Rabbit: Rabbit died~n"),
@@ -54,6 +54,16 @@ code_change(_Vsn, State, Data, _Extra) ->
 %%% gen_statem states
 
 %% roaming state - after timeout, rabbit moves by one and check if on same coord as a carrot
+roaming({call, From}, {are_you_here, [X,Y]}, Rabbit = #rabbit{position=Position}) ->
+    case [X,Y] =:= Position of
+        true ->
+            io:format("True~n"),
+            gen_statem:reply(From, yes);
+        false ->
+            io:format("False~n"),
+            gen_statem:reply(From, no)
+    end,
+    {next_state, roaming, Rabbit, ?RABBIT_SPEED};
 
 roaming(timeout, _EventContent, #rabbit{position=[X,Y], speed=Speed, carrots=Carrots}) ->
     % move rabbit by one
@@ -65,15 +75,24 @@ roaming(timeout, _EventContent, #rabbit{position=[X,Y], speed=Speed, carrots=Car
         
         none ->
             % if no carrot, then move to new space
-            {next_state, roaming, Rabbit, ?TIMEOUT};
+            {next_state, roaming, Rabbit, ?RABBIT_SPEED};
         
         Pid -> 
             % if carrot, move to eating state
-            {next_state, eating, [Rabbit,Pid], ?TIMEOUT}
+            {next_state, eating, [Rabbit,Pid], ?RABBIT_SPEED}
     end.
     
 %% eating state - after timeout rabbit will increase carrot count by one and send message to carrot server
-
+eating({call, From}, {are_you_here, [X,Y]}, Rabbit = #rabbit{position=Position}) ->
+    case [X,Y] =:= Position of
+        true ->
+            io:format("True"),
+            gen_statem:reply(From, yes);
+        false ->
+            io:format("False"),
+            gen_statem:reply(From, no)
+    end,
+    {next_state, eating, Rabbit, ?RABBIT_SPEED};
 eating(timeout, _StateContent, [#rabbit{carrots=Carrots, position=[X,Y], speed=Speed}, Pid]) ->
     NewCarrots = Carrots+1,
     Rabbit = #rabbit{carrots=NewCarrots, position=[X,Y], speed=Speed},
@@ -83,18 +102,18 @@ eating(timeout, _StateContent, [#rabbit{carrots=Carrots, position=[X,Y], speed=S
         ?CARROT_MAX  ->
             % if max carrot, move to splitting
             io:format("Rabbit ~p: Splitting...~n", [Rabbit#rabbit.pid]),
-            {next_state, splitting, #rabbit{carrots=Carrots, position=[X,Y]}, ?FAST_TIMEOUT};
+            {next_state, splitting, #rabbit{carrots=Carrots, position=[X,Y]}, ?SPLIT_TIME};
         
         _ -> 
             % if not max carrot, move to roaming
             io:format("Rabbit ~p: Eaten Carrot~n", [Rabbit#rabbit.pid]),  
-            {next_state, roaming, Rabbit, ?TIMEOUT}
+            {next_state, roaming, Rabbit, ?RABBIT_SPEED}
     end.
     
 %% splitting state - rabbit dynamically adds a new rabbit to the supervisor, return current rabbit to 0 carrots
 splitting(timeout, _EventContent, Rabbit = #rabbit{}) ->
     simulation_rabbit_sup:start_rabbit(),
-    {next_state, roaming, Rabbit#rabbit{carrots=0}, ?TIMEOUT}.
+    {next_state, roaming, Rabbit#rabbit{carrots=0}, ?RABBIT_SPEED}.
     
     
 %%% internal functions
