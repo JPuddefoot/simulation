@@ -24,7 +24,7 @@ init([]) ->
     ChildSpec = #{id => carrot,
                 start => {simulation_carrot, start_link, []},
                 restart => temporary,
-                shutdown => 1000,
+                shutdown => infinity,
                 type => worker},
     {ok, {SupFlags, [ChildSpec]}}.
 

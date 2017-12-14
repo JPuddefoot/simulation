@@ -58,7 +58,7 @@ eating(timeout, _EventContent, [#wolf{position=[X,Y], speed=Speed, rabbits=Rabbi
     NewRabbits = Rabbits+1,
     Wolf = #wolf{position=[X,Y], speed=Speed, rabbits=NewRabbits},
     io:format("Wolf ~p: Eating Rabbit: ~p~n", [Wolf#wolf.pid, Pid]),
-    gen_statem:cast(Pid, eaten),
+    simulation_rabbit_sup:kill_rabbit(Pid),
     case NewRabbits of
         % if max rabbit, move to splitting
         ?RABBIT_MAX ->

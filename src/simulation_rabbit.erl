@@ -1,4 +1,8 @@
 
+%%% TO_DO
+% Make wolf/rabbit call supervisors of processes when shutting them down, will be much cleaner and ,aybe stop crash
+
+
 %%% 
 % A rabbit will randomly travel the world eating carrots that spawn in random places
 % when they eat enough carrots, they will split in two
@@ -40,15 +44,16 @@ callback_mode() ->
     state_functions.
 
 init([]) ->
+    process_flag(trap_exit, true),
     Rabbit = #rabbit{position=simulation_move:rand_coords()},
     io:format("Rabbit born: ~p~n", [Rabbit]),
     {ok, roaming, Rabbit, ?RABBIT_SPEED}.            
 
-terminate(normal, _State, Rabbit = #rabbit{}) ->
+terminate(shutdown, _State, Rabbit = #rabbit{}) ->
     io:format("Rabbit: Rabbit ~p died~n", [Rabbit#rabbit.pid]),
     ok;
-terminate(_Reason, _State, _Data) ->
-    io:format("Rabbit error~n"),
+terminate(_Reason, _State, Rabbit = #rabbit{}) ->
+    io:format("Rabbit error: ~p~n", [Rabbit]),
     ok.
 code_change(_Vsn, State, Data, _Extra) ->
     {ok, State, Data}.
@@ -59,6 +64,8 @@ code_change(_Vsn, State, Data, _Extra) ->
 
 roaming(cast, eaten, #rabbit{}) ->
     {stop, normal, #rabbit{}};
+
+%% handles call from wolf to check position
 roaming({call, From}, {are_you_here, [X,Y]}, Rabbit = #rabbit{position=Position}) ->
     case [X,Y] =:= Position of
         true ->
@@ -86,8 +93,12 @@ roaming(timeout, _EventContent, #rabbit{position=[X,Y], speed=Speed, carrots=Car
     end.
     
 %% eating state - after timeout rabbit will increase carrot count by one and send message to carrot server
+
+% handles cast from wolf to say rabbit has been eaten
 eating(cast, eaten, #rabbit{}) ->
     {stop, normal, #rabbit{}};
+
+% handles call from wolf checking position
 eating({call, From}, {are_you_here, [X,Y]}, [Rabbit = #rabbit{position=Position}, Pid]) ->
     case [X,Y] =:= Position of
         true ->
@@ -98,11 +109,12 @@ eating({call, From}, {are_you_here, [X,Y]}, [Rabbit = #rabbit{position=Position}
             gen_statem:reply(From, no)
     end,
     {next_state, eating, [Rabbit, Pid], ?RABBIT_SPEED};
+% at timeout, rabbit "eats" carrot and moves to roaming or splitting
 eating(timeout, _StateContent, [#rabbit{carrots=Carrots, position=[X,Y], speed=Speed}, Pid]) ->
     NewCarrots = Carrots+1,
     Rabbit = #rabbit{carrots=NewCarrots, position=[X,Y], speed=Speed},
     io:format("Rabbit ~p: Eaten Carrot~n", [Rabbit#rabbit.pid]), 
-    gen_server:cast(Pid, eaten),
+    supervisor:terminate_child(carrot_sup, Pid),
     % check if CARROT_MAX reached
     case NewCarrots of
         ?CARROT_MAX  ->
