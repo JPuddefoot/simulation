@@ -114,7 +114,7 @@ eating(timeout, _StateContent, [#rabbit{carrots=Carrots, position=[X,Y], speed=S
     NewCarrots = Carrots+1,
     Rabbit = #rabbit{carrots=NewCarrots, position=[X,Y], speed=Speed},
     io:format("Rabbit ~p: Eaten Carrot~n", [Rabbit#rabbit.pid]), 
-    supervisor:terminate_child(carrot_sup, Pid),
+    simulation_carrot_sup:kill_carrot(Pid),
     % check if CARROT_MAX reached
     case NewCarrots of
         ?CARROT_MAX  ->

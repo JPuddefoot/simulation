@@ -4,7 +4,7 @@
 -include("../include/simulation_records.hrl").
 
 %%% supervisor api
--export([start_link/0]).
+-export([start_link/0, start_link/1, kill_carrot/1]).
 
 %%% supervisor callbacks
 -export([init/1]).
@@ -13,10 +13,15 @@
 start_link() ->
     supervisor:start_link({local, carrot_sup}, ?MODULE, []),
     spawn_carrots(?MAX_CARROTS).
+start_link(CarrotNum) ->
+    supervisor:start_link({local, carrot_sup}, ?MODULE, []),
+    spawn_carrots(CarrotNum).
 
 start_carrot() ->
     supervisor:start_child(carrot_sup, []).
 
+kill_carrot(Pid) ->
+    supervisor:terminate_child(carrot_sup, Pid).
 
 %%% Callbacks
 init([]) ->
