@@ -56,7 +56,8 @@ handle_info(Msg, Carrot = #carrot{}) ->
 
 %% carrot terminates when no more carrots left
 terminate(shutdown, Carrot) ->
-    io:format("Carrot ~p fully eaten~n", [Carrot#carrot.pid]);
+    io:format("Carrot ~p fully eaten~n", [Carrot#carrot.pid]),
+    ok;
 %% error 
 terminate(_Reason, Carrot) ->
     io:format("Error: ~p~n", [Carrot#carrot.pid]),

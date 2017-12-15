@@ -28,7 +28,7 @@
                 speed = ?MAX_RES,
                 carrots=0}).
 % time between rabbit movements
--define(RABBIT_SPEED, 1000).
+-define(RABBIT_SPEED, 500).
 %time taken to split
 
 % number of carrots before splitting
