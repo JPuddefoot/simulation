@@ -47,7 +47,7 @@ init([]) ->
     process_flag(trap_exit, true),
     Rabbit = #rabbit{position=simulation_move:rand_coords()},
     io:format("Rabbit born: ~p~n", [Rabbit]),
-    {ok, roaming, [Rabbit], ?RABBIT_SPEED}.            
+    {ok, roaming, Rabbit, ?RABBIT_SPEED}.            
 
 terminate(shutdown, _State, [Rabbit = #rabbit{}| _Tail]) ->
     io:format("Rabbit: Rabbit ~p died~n", [Rabbit#rabbit.pid]),
@@ -62,11 +62,11 @@ code_change(_Vsn, State, Data, _Extra) ->
 
 %% roaming state - after timeout, rabbit moves by one and check if on same coord as a carrot
 
-roaming(cast, eaten, [#rabbit{}]) ->
+roaming(cast, eaten, #rabbit{}) ->
     {stop, normal, #rabbit{}};
 
 %% handles call from wolf to check position
-roaming({call, From}, {are_you_here, [X,Y]}, [Rabbit = #rabbit{position=Position}]) ->
+roaming({call, From}, {are_you_here, [X,Y]}, Rabbit = #rabbit{position=Position}) ->
     case [X,Y] =:= Position of
         true ->
             gen_statem:reply(From, yes);
@@ -75,7 +75,7 @@ roaming({call, From}, {are_you_here, [X,Y]}, [Rabbit = #rabbit{position=Position
     end,
     {next_state, roaming, Rabbit, ?RABBIT_SPEED};
 
-roaming(timeout, _EventContent, [#rabbit{position=[X,Y], speed=Speed, carrots=Carrots}]) ->
+roaming(timeout, _EventContent, #rabbit{position=[X,Y], speed=Speed, carrots=Carrots}) ->
     % move rabbit by one
     [X2, Y2] = simulation_move:rand_move([X,Y], Speed),
     Rabbit = #rabbit{position=[X2, Y2], carrots=Carrots},
@@ -120,7 +120,7 @@ eating(timeout, _StateContent, [#rabbit{carrots=Carrots, position=[X,Y], speed=S
         ?CARROT_MAX  ->
             % if max carrot, move to splitting
             io:format("Rabbit ~p: Splitting...~n", [Rabbit#rabbit.pid]),
-            {next_state, splitting, [#rabbit{carrots=Carrots, position=[X,Y]}], ?SPLIT_TIME};
+            {next_state, splitting, #rabbit{carrots=Carrots, position=[X,Y]}, ?SPLIT_TIME};
         
         _ -> 
             % if not max carrot, move to roaming 
@@ -130,8 +130,6 @@ eating(timeout, _StateContent, [#rabbit{carrots=Carrots, position=[X,Y], speed=S
 %% splitting state - rabbit dynamically adds a new rabbit to the supervisor, return current rabbit to 0 carrots
 splitting(cast, eaten, #rabbit{}) ->
     {stop, normal, #rabbit{}};
-splitting(cast, eaten, Rabbit) ->
-    {stop, normal, Rabbit};
 splitting({call, From}, {are_you_here, [X,Y]}, [Rabbit = #rabbit{position=Position}, Pid]) ->
     case [X,Y] =:= Position of
         true ->

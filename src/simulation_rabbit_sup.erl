@@ -4,7 +4,7 @@
 -include("../include/simulation_records.hrl").
 
 %%% supervisor api
--export([start_link/0, start_rabbit/0, kill_rabbit/1]).
+-export([start_link/0, start_link/1, start_rabbit/0, kill_rabbit/1]).
 
 %%% supervisor callbacks
 -export([init/1]).
@@ -13,6 +13,10 @@
 start_link() ->
     supervisor:start_link({local, rabbit_sup}, ?MODULE, []),
     breed_rabbits(?MAX_RABBITS).
+
+start_link(RabbitNum) ->
+    supervisor:start_link({local, rabbit_sup}, ?MODULE, []),
+    breed_rabbits(RabbitNum).
 
 start_rabbit() ->
     supervisor:start_child(rabbit_sup, []).
